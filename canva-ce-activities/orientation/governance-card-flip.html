@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Governance Card Flip — Canva Enterprise</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F7F7F8;
+      color: #1B1B1B;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 64px;
+    }
+
+    /* --- Header --- */
+    .header {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1B1B1B;
+      letter-spacing: -0.3px;
+    }
+
+    .header h1 span {
+      color: #7D2AE8;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    /* --- Progress --- */
+    .progress {
+      font-size: 14px;
+      color: #888;
+      margin: 16px 0 24px;
+      text-align: center;
+      min-height: 20px;
+      transition: opacity 0.3s ease;
+    }
+
+    .progress.complete {
+      color: #00B341;
+      font-weight: 600;
+    }
+
+    /* --- Card Grid --- */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 680px;
+      width: 100%;
+      transition: opacity 0.6s ease, filter 0.6s ease;
+    }
+
+    .card-grid.dimmed {
+      opacity: 0.45;
+      filter: blur(1px);
+      pointer-events: none;
+    }
+
+    /* --- Card --- */
+    .card-container {
+      perspective: 900px;
+      height: 220px;
+    }
+
+    .card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      transform-style: preserve-3d;
+      transition: transform 0.6s ease;
+      outline: none;
+    }
+
+    .card:focus-visible {
+      outline: 3px solid #00C4CC;
+      outline-offset: 3px;
+      border-radius: 12px;
+    }
+
+    .card.flipped {
+      transform: rotateY(180deg);
+      cursor: default;
+    }
+
+    .card:not(.flipped):hover {
+      transform: scale(1.03);
+    }
+
+    .card:not(.flipped):hover .card-face.front {
+      box-shadow: 0 8px 24px rgba(125, 42, 232, 0.35);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px;
+      overflow: hidden;
+    }
+
+    /* Front */
+    .card-face.front {
+      background: #7D2AE8;
+      box-shadow: 0 4px 14px rgba(125, 42, 232, 0.25);
+      z-index: 2;
+    }
+
+    .card-face.front .card-number {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .card-face.front .term-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .card-face.front .tap-hint {
+      position: absolute;
+      bottom: 14px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.45);
+      letter-spacing: 0.3px;
+    }
+
+    /* Back */
+    .card-face.back {
+      background: #FFFFFF;
+      transform: rotateY(180deg);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      justify-content: flex-start;
+      padding: 18px 16px 16px;
+      text-align: left;
+      align-items: flex-start;
+    }
+
+    .card-face.back .term-name-back {
+      font-size: 14px;
+      font-weight: 700;
+      color: #7D2AE8;
+      margin-bottom: 8px;
+      width: 100%;
+    }
+
+    .card-face.back .definition {
+      font-size: 13px;
+      line-height: 1.5;
+      color: #1B1B1B;
+      margin-bottom: 10px;
+    }
+
+    .card-face.back .example {
+      font-size: 12px;
+      font-style: italic;
+      color: #666;
+      line-height: 1.45;
+      border-top: 1px solid #EDEDF0;
+      padding-top: 8px;
+      width: 100%;
+    }
+
+    .card-face.back .example::before {
+      content: "\01F4A1";
+      font-style: normal;
+      margin-right: 4px;
+    }
+
+    /* --- Bonus Quiz Panel --- */
+    .quiz-panel {
+      max-width: 680px;
+      width: 100%;
+      margin-top: 32px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      padding: 32px 28px;
+      display: none;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .quiz-panel.visible {
+      display: block;
+      animation: slideUp 0.6s ease forwards;
+    }
+
+    @keyframes slideUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .quiz-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .quiz-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1B1B1B;
+    }
+
+    .quiz-header h2 span {
+      color: #7D2AE8;
+    }
+
+    .quiz-header p {
+      font-size: 14px;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    .quiz-progress {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .quiz-question {
+      font-size: 18px;
+      font-weight: 500;
+      color: #1B1B1B;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .quiz-option {
+      background: #FFFFFF;
+      border: 2px solid #00C4CC;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 15px;
+      color: #1B1B1B;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+      text-align: left;
+      outline: none;
+      position: relative;
+    }
+
+    .quiz-option:hover:not(.disabled) {
+      background: #E6FAFB;
+      transform: scale(1.01);
+    }
+
+    .quiz-option:focus-visible {
+      outline: 3px solid #7D2AE8;
+      outline-offset: 2px;
+    }
+
+    .quiz-option.disabled {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .quiz-option.correct {
+      background: #E6F9EE;
+      border-color: #00B341;
+      color: #00803A;
+      font-weight: 600;
+    }
+
+    .quiz-option.correct::after {
+      content: "\2713";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      font-weight: 700;
+      color: #00B341;
+    }
+
+    .quiz-option.incorrect {
+      background: #FFEFED;
+      border-color: #FF7262;
+      color: #CC4A3D;
+    }
+
+    .quiz-option.incorrect::after {
+      content: "\2717";
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      font-weight: 700;
+      color: #FF7262;
+    }
+
+    .quiz-feedback {
+      text-align: center;
+      font-size: 14px;
+      color: #00803A;
+      font-weight: 500;
+      min-height: 22px;
+      margin-bottom: 16px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .quiz-feedback.show {
+      opacity: 1;
+    }
+
+    .quiz-next-btn {
+      display: none;
+      margin: 0 auto;
+      background: #7D2AE8;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 32px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    .quiz-next-btn:hover {
+      background: #6B22CC;
+      transform: scale(1.02);
+    }
+
+    .quiz-next-btn:focus-visible {
+      outline: 3px solid #00C4CC;
+      outline-offset: 2px;
+    }
+
+    .quiz-next-btn.visible {
+      display: block;
+    }
+
+    /* --- Score Panel --- */
+    .score-panel {
+      display: none;
+      text-align: center;
+      padding-top: 8px;
+    }
+
+    .score-panel.visible {
+      display: block;
+      animation: slideUp 0.6s ease forwards;
+      opacity: 0;
+    }
+
+    .score-number {
+      font-size: 56px;
+      font-weight: 800;
+      color: #7D2AE8;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .score-label {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .score-message {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1B1B1B;
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+
+    .score-encourage {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 0;
+    }
+
+    /* --- Start Over --- */
+    .start-over-btn {
+      display: none;
+      margin: 28px auto 0;
+      background: transparent;
+      color: #7D2AE8;
+      border: 2px solid #7D2AE8;
+      border-radius: 10px;
+      padding: 12px 36px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .start-over-btn:hover {
+      background: #7D2AE8;
+      color: #FFFFFF;
+      transform: scale(1.02);
+    }
+
+    .start-over-btn:focus-visible {
+      outline: 3px solid #00C4CC;
+      outline-offset: 2px;
+    }
+
+    .start-over-btn.visible {
+      display: block;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 720px) {
+      body {
+        padding: 24px 12px 48px;
+      }
+
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .card-container {
+        height: 200px;
+      }
+
+      .card-face.front .term-name {
+        font-size: 14px;
+      }
+
+      .card-face.back {
+        padding: 14px 12px 12px;
+      }
+
+      .card-face.back .term-name-back {
+        font-size: 13px;
+      }
+
+      .card-face.back .definition {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      .card-face.back .example {
+        font-size: 11px;
+        padding-top: 6px;
+      }
+
+      .quiz-panel {
+        padding: 24px 18px;
+      }
+
+      .quiz-question {
+        font-size: 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .card-grid {
+        gap: 10px;
+      }
+
+      .card-container {
+        height: 190px;
+      }
+
+      .card-face.front .term-name {
+        font-size: 13px;
+      }
+
+      .card-face.front .tap-hint {
+        font-size: 10px;
+      }
+
+      .card-face.back {
+        padding: 12px 10px 10px;
+      }
+
+      .card-face.back .term-name-back {
+        font-size: 12px;
+        margin-bottom: 6px;
+      }
+
+      .card-face.back .definition {
+        font-size: 11px;
+        line-height: 1.4;
+        margin-bottom: 5px;
+      }
+
+      .card-face.back .example {
+        font-size: 10px;
+        line-height: 1.35;
+        padding-top: 5px;
+      }
+
+      .quiz-option {
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      .score-number {
+        font-size: 44px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <h1><span>Governance</span> Card Flip</h1>
+    <p>Tap each card to reveal its definition, then test yourself in the bonus round.</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress" id="progress" aria-live="polite">0 of 9 revealed</div>
+
+  <!-- Card Grid -->
+  <div class="card-grid" id="cardGrid" role="list"></div>
+
+  <!-- Bonus Quiz Panel -->
+  <div class="quiz-panel" id="quizPanel" role="region" aria-label="Quick-Fire Bonus Quiz">
+    <div class="quiz-header">
+      <h2><span>Quick-Fire Round</span> — Test Your Knowledge</h2>
+      <p>3 scenario questions. Let's see what stuck.</p>
+    </div>
+    <div class="quiz-progress" id="quizProgress" aria-live="polite"></div>
+    <div class="quiz-question" id="quizQuestion"></div>
+    <div class="quiz-options" id="quizOptions" role="radiogroup"></div>
+    <div class="quiz-feedback" id="quizFeedback" aria-live="polite"></div>
+    <button class="quiz-next-btn" id="quizNextBtn">Next Question</button>
+
+    <!-- Score Panel (inside quiz panel) -->
+    <div class="score-panel" id="scorePanel">
+      <div class="score-number" id="scoreNumber">0/3</div>
+      <div class="score-label">correct answers</div>
+      <div class="score-message" id="scoreMessage"></div>
+      <div class="score-encourage" id="scoreEncourage"></div>
+    </div>
+  </div>
+
+  <!-- Start Over -->
+  <button class="start-over-btn" id="startOverBtn">Start Over</button>
+
+  <script>
+    /* ============================================================
+       DATA
+       ============================================================ */
+    const cards = [
+      {
+        id: 1,
+        term: "Role",
+        definition: "A level of access assigned to a person that determines their capabilities.",
+        example: "Roles are like job titles for access. A member can create; an admin can manage."
+      },
+      {
+        id: 2,
+        term: "Member",
+        definition: "The default role \u2014 can create designs, use templates, and collaborate within their team.",
+        example: "Maria in Marketing can create presentations and use Brand Templates but can\u2019t manage team settings."
+      },
+      {
+        id: 3,
+        term: "Team Admin",
+        definition: "Can manage people, settings, and Brand Kits within a specific team.",
+        example: "James manages the Sales team \u2014 he adds new reps, adjusts settings, and maintains their Brand Kit."
+      },
+      {
+        id: 4,
+        term: "Organization Admin",
+        definition: "Can manage settings, teams, billing, and security across the entire Canva organization.",
+        example: "Sarah in IT manages SSO, creates new teams, and has visibility across the entire organization."
+      },
+      {
+        id: 5,
+        term: "Group Admin",
+        definition: "Can manage members within a specific group.",
+        example: "Alex leads the Content Writers group within Marketing \u2014 they add and remove writers from the group."
+      },
+      {
+        id: 6,
+        term: "Permissions",
+        definition: "Fine-grained controls that define specific actions people can take within their role.",
+        example: "Members in the Legal team can\u2019t export designs as PDF \u2014 that permission is restricted for compliance."
+      },
+      {
+        id: 7,
+        term: "Design Approvals",
+        definition: "The review process where designs must be approved by a reviewer before being published or shared.",
+        example: "Every client-facing proposal must be approved by the brand manager before anyone can share it."
+      },
+      {
+        id: 8,
+        term: "Reviewer",
+        definition: "A person designated to approve or reject a design as part of design approvals.",
+        example: "Lisa reviews all social media designs before they go live \u2014 she can approve, request changes, or reject."
+      },
+      {
+        id: 9,
+        term: "Brand Controls",
+        definition: "Restrictions set within a Brand Kit that ensure correct usage of brand assets.",
+        example: "Only the approved brand fonts are available. Members can\u2019t switch to Comic Sans even if they want to."
+      }
+    ];
+
+    const quizQuestions = [
+      {
+        question: "An employee just joined and can create designs and use templates, but they can\u2019t change any settings. What\u2019s their role?",
+        options: ["Member", "Team Admin", "Organization Admin"],
+        correct: 0,
+        feedback: "Exactly \u2014 Member is the default role for most people."
+      },
+      {
+        question: "Your company requires that all press releases go through a brand check before distribution. What governance feature handles this?",
+        options: ["Permissions", "Brand Controls", "Design Approvals"],
+        correct: 2,
+        feedback: "Right \u2014 Design Approvals add a review checkpoint before content goes out."
+      },
+      {
+        question: "You want to make sure no one can use unapproved fonts in their designs. What do you configure?",
+        options: ["Permissions", "Brand Controls", "Roles"],
+        correct: 1,
+        feedback: "That\u2019s it \u2014 Brand Controls restrict which fonts, colors, and elements are available."
+      }
+    ];
+
+    /* ============================================================
+       STATE
+       ============================================================ */
+    let flippedCount = 0;
+    let currentQuizIndex = 0;
+    let quizScore = 0;
+    let quizActive = false;
+
+    /* ============================================================
+       ELEMENTS
+       ============================================================ */
+    const cardGrid = document.getElementById("cardGrid");
+    const progressEl = document.getElementById("progress");
+    const quizPanel = document.getElementById("quizPanel");
+    const quizProgressEl = document.getElementById("quizProgress");
+    const quizQuestionEl = document.getElementById("quizQuestion");
+    const quizOptionsEl = document.getElementById("quizOptions");
+    const quizFeedbackEl = document.getElementById("quizFeedback");
+    const quizNextBtn = document.getElementById("quizNextBtn");
+    const scorePanel = document.getElementById("scorePanel");
+    const scoreNumberEl = document.getElementById("scoreNumber");
+    const scoreMessageEl = document.getElementById("scoreMessage");
+    const scoreEncourageEl = document.getElementById("scoreEncourage");
+    const startOverBtn = document.getElementById("startOverBtn");
+
+    /* ============================================================
+       BUILD CARDS
+       ============================================================ */
+    function buildCards() {
+      cardGrid.innerHTML = "";
+      cards.forEach(function(card) {
+        var container = document.createElement("div");
+        container.className = "card-container";
+        container.setAttribute("role", "listitem");
+
+        var cardEl = document.createElement("div");
+        cardEl.className = "card";
+        cardEl.setAttribute("tabindex", "0");
+        cardEl.setAttribute("role", "button");
+        cardEl.setAttribute("aria-label", card.term + " \u2014 click to reveal definition");
+        cardEl.dataset.id = card.id;
+
+        // Front
+        var front = document.createElement("div");
+        front.className = "card-face front";
+
+        var num = document.createElement("span");
+        num.className = "card-number";
+        num.textContent = card.id;
+
+        var termFront = document.createElement("span");
+        termFront.className = "term-name";
+        termFront.textContent = card.term;
+
+        var hint = document.createElement("span");
+        hint.className = "tap-hint";
+        hint.textContent = "tap to reveal";
+
+        front.appendChild(num);
+        front.appendChild(termFront);
+        front.appendChild(hint);
+
+        // Back
+        var back = document.createElement("div");
+        back.className = "card-face back";
+
+        var termBack = document.createElement("div");
+        termBack.className = "term-name-back";
+        termBack.textContent = card.term;
+
+        var defn = document.createElement("div");
+        defn.className = "definition";
+        defn.textContent = card.definition;
+
+        var ex = document.createElement("div");
+        ex.className = "example";
+        ex.textContent = card.example;
+
+        back.appendChild(termBack);
+        back.appendChild(defn);
+        back.appendChild(ex);
+
+        cardEl.appendChild(front);
+        cardEl.appendChild(back);
+        container.appendChild(cardEl);
+        cardGrid.appendChild(container);
+
+        // Events
+        cardEl.addEventListener("click", function() {
+          flipCard(cardEl);
+        });
+        cardEl.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            flipCard(cardEl);
+          }
+        });
+      });
+    }
+
+    /* ============================================================
+       FLIP CARD
+       ============================================================ */
+    function flipCard(cardEl) {
+      if (cardEl.classList.contains("flipped")) return;
+
+      cardEl.classList.add("flipped");
+      cardEl.setAttribute("aria-label", cardEl.querySelector(".term-name").textContent + " \u2014 revealed");
+      cardEl.removeAttribute("tabindex");
+      cardEl.setAttribute("role", "region");
+
+      flippedCount++;
+      updateProgress();
+
+      if (flippedCount === 9) {
+        triggerQuiz();
+      }
+    }
+
+    /* ============================================================
+       PROGRESS
+       ============================================================ */
+    function updateProgress() {
+      if (flippedCount < 9) {
+        progressEl.textContent = flippedCount + " of 9 revealed";
+        progressEl.classList.remove("complete");
+      } else {
+        progressEl.textContent = "All 9 revealed \u2014 bonus round unlocked!";
+        progressEl.classList.add("complete");
+      }
+    }
+
+    /* ============================================================
+       QUIZ
+       ============================================================ */
+    function triggerQuiz() {
+      setTimeout(function() {
+        cardGrid.classList.add("dimmed");
+        quizPanel.classList.add("visible");
+        quizActive = true;
+        loadQuestion(0);
+        // Scroll quiz into view
+        setTimeout(function() {
+          quizPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 300);
+      }, 800);
+    }
+
+    function loadQuestion(index) {
+      var q = quizQuestions[index];
+      quizProgressEl.textContent = "Question " + (index + 1) + " of 3";
+      quizQuestionEl.textContent = q.question;
+      quizFeedbackEl.textContent = "";
+      quizFeedbackEl.classList.remove("show");
+      quizNextBtn.classList.remove("visible");
+      quizOptionsEl.innerHTML = "";
+
+      q.options.forEach(function(opt, i) {
+        var btn = document.createElement("button");
+        btn.className = "quiz-option";
+        btn.textContent = opt;
+        btn.setAttribute("role", "radio");
+        btn.setAttribute("aria-checked", "false");
+        btn.addEventListener("click", function() {
+          handleAnswer(i, index);
+        });
+        btn.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleAnswer(i, index);
+          }
+        });
+        quizOptionsEl.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(selectedIndex, questionIndex) {
+      var q = quizQuestions[questionIndex];
+      var options = quizOptionsEl.querySelectorAll(".quiz-option");
+
+      // Disable all
+      options.forEach(function(opt) {
+        opt.classList.add("disabled");
+      });
+
+      // Mark correct
+      options[q.correct].classList.add("correct");
+
+      if (selectedIndex === q.correct) {
+        quizScore++;
+        quizFeedbackEl.textContent = q.feedback;
+        quizFeedbackEl.style.color = "#00803A";
+      } else {
+        options[selectedIndex].classList.add("incorrect");
+        quizFeedbackEl.textContent = "Not quite. " + q.feedback;
+        quizFeedbackEl.style.color = "#CC4A3D";
+      }
+
+      quizFeedbackEl.classList.add("show");
+
+      // Show Next or Score
+      setTimeout(function() {
+        if (questionIndex < 2) {
+          quizNextBtn.textContent = "Next Question";
+          quizNextBtn.classList.add("visible");
+          quizNextBtn.focus();
+        } else {
+          quizNextBtn.textContent = "See Your Score";
+          quizNextBtn.classList.add("visible");
+          quizNextBtn.focus();
+        }
+      }, 600);
+    }
+
+    quizNextBtn.addEventListener("click", function() {
+      currentQuizIndex++;
+      if (currentQuizIndex < 3) {
+        loadQuestion(currentQuizIndex);
+      } else {
+        showScore();
+      }
+    });
+
+    /* ============================================================
+       SCORE
+       ============================================================ */
+    function showScore() {
+      // Hide question elements
+      quizProgressEl.style.display = "none";
+      quizQuestionEl.style.display = "none";
+      quizOptionsEl.style.display = "none";
+      quizFeedbackEl.style.display = "none";
+      quizNextBtn.style.display = "none";
+
+      scorePanel.classList.add("visible");
+
+      // Animate score count
+      animateScore(0, quizScore);
+
+      // Messages
+      if (quizScore === 3) {
+        scoreMessageEl.textContent = "Perfect score \u2014 3/3! You\u2019ve mastered governance terminology.";
+        scoreEncourageEl.textContent = "You\u2019re ready to configure governance settings with confidence.";
+      } else if (quizScore === 2) {
+        scoreMessageEl.textContent = "You scored 2/3 \u2014 solid foundation!";
+        scoreEncourageEl.textContent = "A quick review of the cards you missed will lock this in.";
+      } else if (quizScore === 1) {
+        scoreMessageEl.textContent = "You scored 1/3 \u2014 a good start.";
+        scoreEncourageEl.textContent = "Flip through the cards again and these concepts will click.";
+      } else {
+        scoreMessageEl.textContent = "You scored 0/3 \u2014 no worries!";
+        scoreEncourageEl.textContent = "Governance terms take practice. Flip the cards again and give it another go.";
+      }
+
+      startOverBtn.classList.add("visible");
+    }
+
+    function animateScore(current, target) {
+      var el = scoreNumberEl;
+      var duration = 600;
+      var steps = target;
+      if (steps === 0) {
+        el.textContent = "0/3";
+        return;
+      }
+      var stepTime = duration / steps;
+      var count = 0;
+      var interval = setInterval(function() {
+        count++;
+        el.textContent = count + "/3";
+        if (count >= target) {
+          clearInterval(interval);
+        }
+      }, stepTime);
+    }
+
+    /* ============================================================
+       START OVER
+       ============================================================ */
+    startOverBtn.addEventListener("click", function() {
+      // Reset state
+      flippedCount = 0;
+      currentQuizIndex = 0;
+      quizScore = 0;
+      quizActive = false;
+
+      // Reset UI
+      cardGrid.classList.remove("dimmed");
+      quizPanel.classList.remove("visible");
+      quizPanel.style.display = "";
+      scorePanel.classList.remove("visible");
+      startOverBtn.classList.remove("visible");
+
+      // Reset quiz internals
+      quizProgressEl.style.display = "";
+      quizQuestionEl.style.display = "";
+      quizOptionsEl.style.display = "";
+      quizFeedbackEl.style.display = "";
+      quizNextBtn.style.display = "";
+      quizNextBtn.classList.remove("visible");
+      scoreNumberEl.textContent = "0/3";
+
+      updateProgress();
+      buildCards();
+
+      // Scroll to top
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    buildCards();
+    updateProgress();
+  </script>
+</body>
+</html>

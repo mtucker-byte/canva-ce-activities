@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Three Layer Sorting Activity — Canva Enterprise</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F5F5F5;
+      color: #1B1B1B;
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1B1B1B;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    /* ─── Progress ─── */
+    .progress {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    .progress-bar-track {
+      width: 200px;
+      height: 6px;
+      background: #DDD;
+      border-radius: 3px;
+      margin: 8px auto 0;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: #00B341;
+      border-radius: 3px;
+      transition: width 400ms ease;
+    }
+
+    /* ─── Card Tray ─── */
+    .card-tray {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 32px;
+      min-height: 80px;
+      padding: 8px;
+    }
+
+    /* ─── Scenario Cards ─── */
+    .card {
+      background: #FFFFFF;
+      border: 2px solid #E0E0E0;
+      border-radius: 12px;
+      padding: 16px;
+      width: 175px;
+      font-size: 14px;
+      line-height: 1.45;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, opacity 200ms ease;
+      position: relative;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+
+    .card:active {
+      cursor: grabbing;
+    }
+
+    .card:focus-visible {
+      outline: 3px solid #7D2AE8;
+      outline-offset: 2px;
+    }
+
+    .card.dragging {
+      opacity: 0.5;
+      transform: scale(1.05);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    }
+
+    .card.selected {
+      border-color: #7D2AE8;
+      box-shadow: 0 0 0 3px rgba(125, 42, 232, 0.25);
+    }
+
+    .card.locked {
+      cursor: default;
+      border-color: #00B341;
+      background: #F0FFF4;
+    }
+
+    .card.locked:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card-number {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      line-height: 22px;
+      text-align: center;
+      border-radius: 50%;
+      background: #E8E8E8;
+      color: #555;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card.locked .card-number {
+      background: #00B341;
+      color: #FFF;
+    }
+
+    .card-explanation {
+      display: none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #E0E0E0;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.5;
+      animation: fadeIn 400ms ease;
+    }
+
+    .card.locked .card-explanation {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .card.shake {
+      animation: shake 300ms ease;
+    }
+
+    /* ─── Drop Zones ─── */
+    .zones {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .zone {
+      border: 2px dashed;
+      border-radius: 16px;
+      padding: 20px 16px;
+      min-height: 200px;
+      text-align: center;
+      transition: background 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .zone:focus-visible {
+      outline: 3px solid #1B1B1B;
+      outline-offset: 2px;
+    }
+
+    .zone-security {
+      border-color: #00C4CC;
+      background: #E6FAFB;
+    }
+
+    .zone-structure {
+      border-color: #7D2AE8;
+      background: #F0E6FF;
+    }
+
+    .zone-governance {
+      border-color: #FF7262;
+      background: #FFE8E5;
+    }
+
+    .zone.drag-over {
+      transform: scale(1.02);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .zone-security.drag-over {
+      background: #C6F4F6;
+      border-color: #00A8B0;
+    }
+
+    .zone-structure.drag-over {
+      background: #DCC6FF;
+      border-color: #6A1FCC;
+    }
+
+    .zone-governance.drag-over {
+      background: #FFCEC8;
+      border-color: #E05A4D;
+    }
+
+    .zone-icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    .zone-label {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .zone-security .zone-label { color: #009DA3; }
+    .zone-structure .zone-label { color: #6A1FCC; }
+    .zone-governance .zone-label { color: #E05A4D; }
+
+    .zone-desc {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .zone-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .zone-cards .card {
+      width: 100%;
+    }
+
+    /* ─── Toast ─── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1B1B1B;
+      color: #FFFFFF;
+      font-size: 14px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      opacity: 0;
+      transition: transform 300ms ease, opacity 300ms ease;
+      z-index: 100;
+      pointer-events: none;
+      text-align: center;
+      max-width: 400px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ─── Completion Panel ─── */
+    .completion {
+      display: none;
+      text-align: center;
+      padding: 32px 24px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      margin-bottom: 24px;
+      animation: slideUp 400ms ease;
+    }
+
+    .completion.visible {
+      display: block;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .completion-emoji {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+
+    .completion h2 {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #1B1B1B;
+    }
+
+    .completion p {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.5;
+      max-width: 480px;
+      margin: 0 auto 20px;
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 200ms ease, transform 100ms ease;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:focus-visible {
+      outline: 3px solid #7D2AE8;
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: #7D2AE8;
+      color: #FFFFFF;
+    }
+
+    .btn-primary:hover {
+      background: #6A1FCC;
+    }
+
+    .btn-secondary {
+      background: #E8E8E8;
+      color: #1B1B1B;
+    }
+
+    .btn-secondary:hover {
+      background: #D4D4D4;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* ─── Mobile ─── */
+    @media (max-width: 767px) {
+      body {
+        padding: 16px 12px 40px;
+      }
+
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .card-tray {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 360px;
+      }
+
+      .zones {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .zone {
+        min-height: 120px;
+      }
+
+      .zone-cards .card {
+        max-width: 100%;
+      }
+
+      .controls {
+        justify-content: center;
+      }
+    }
+
+    /* ─── Reduced Motion ─── */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ─── Print ─── */
+    @media print {
+      .controls, .toast, .progress { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- Header -->
+    <div class="header">
+      <h1>Three Layer Sorting</h1>
+      <p>Drag each scenario to the layer it belongs to.</p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress" aria-live="polite">
+      <span id="progress-text">0 of 5 sorted</span>
+      <div class="progress-bar-track" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="5">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Scenario Cards -->
+    <div class="card-tray" id="card-tray" aria-label="Unsorted scenario cards">
+    </div>
+
+    <!-- Drop Zones -->
+    <div class="zones" id="zones">
+      <div class="zone zone-security"
+           id="zone-security"
+           data-zone="security"
+           role="region"
+           aria-label="Security layer drop zone"
+           tabindex="0">
+        <div class="zone-icon" aria-hidden="true">&#x1F512;</div>
+        <div class="zone-label">Security</div>
+        <div class="zone-desc">Who gets in and how</div>
+        <div class="zone-cards" id="zone-security-cards"></div>
+      </div>
+
+      <div class="zone zone-structure"
+           id="zone-structure"
+           data-zone="structure"
+           role="region"
+           aria-label="Structure layer drop zone"
+           tabindex="0">
+        <div class="zone-icon" aria-hidden="true">&#x1F3D7;&#xFE0F;</div>
+        <div class="zone-label">Structure</div>
+        <div class="zone-desc">Where things are organized</div>
+        <div class="zone-cards" id="zone-structure-cards"></div>
+      </div>
+
+      <div class="zone zone-governance"
+           id="zone-governance"
+           data-zone="governance"
+           role="region"
+           aria-label="Governance layer drop zone"
+           tabindex="0">
+        <div class="zone-icon" aria-hidden="true">&#x2696;&#xFE0F;</div>
+        <div class="zone-label">Governance</div>
+        <div class="zone-desc">What people can do</div>
+        <div class="zone-cards" id="zone-governance-cards"></div>
+      </div>
+    </div>
+
+    <!-- Completion Panel -->
+    <div class="completion" id="completion" role="alert">
+      <div class="completion-emoji" aria-hidden="true">&#x1F389;</div>
+      <h2>You got them all!</h2>
+      <p>You can now categorize enterprise scenarios into the Three Layer Model.</p>
+      <button class="btn btn-primary" id="btn-try-again" type="button">Try Again</button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-secondary" id="btn-reset" type="button">Start Over</button>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ── Data ── */
+      var scenarios = [
+        {
+          id: 'card-1',
+          number: 1,
+          text: 'A new employee joins and needs a Canva account created automatically through your HR system.',
+          zone: 'security',
+          explanation: 'Automatic account creation happens through provisioning (SCIM). This is about getting someone in.'
+        },
+        {
+          id: 'card-2',
+          number: 2,
+          text: 'Your marketing team needs their own space where only their members can see designs.',
+          zone: 'structure',
+          explanation: 'Creating a team with visibility boundaries is a placement decision.'
+        },
+        {
+          id: 'card-3',
+          number: 3,
+          text: 'No one can publish a social media design without a manager reviewing it first.',
+          zone: 'governance',
+          explanation: 'Requiring approval before publishing is a capability control.'
+        },
+        {
+          id: 'card-4',
+          number: 4,
+          text: 'You need to find out how many people already have Canva accounts using work email.',
+          zone: 'security',
+          explanation: 'Domain verification reveals existing accounts. This is about understanding who\u2019s at the door.'
+        },
+        {
+          id: 'card-5',
+          number: 5,
+          text: 'Your brand team wants to organize logos, colors, and fonts in one place.',
+          zone: 'structure',
+          explanation: 'Brand Kits determine where brand assets are stored and which team owns them.'
+        }
+      ];
+
+      /* ── State ── */
+      var sorted = 0;
+      var selectedCardId = null;
+      var toastTimer = null;
+      var touchState = null;
+
+      /* ── DOM refs ── */
+      var cardTray = document.getElementById('card-tray');
+      var progressText = document.getElementById('progress-text');
+      var progressFill = document.getElementById('progress-fill');
+      var progressBar = progressFill.parentElement;
+      var completionPanel = document.getElementById('completion');
+      var toastEl = document.getElementById('toast');
+      var btnReset = document.getElementById('btn-reset');
+      var btnTryAgain = document.getElementById('btn-try-again');
+      var zones = document.querySelectorAll('.zone');
+
+      /* ── Shuffle ── */
+      function shuffle(arr) {
+        var a = arr.slice();
+        for (var i = a.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = a[i];
+          a[i] = a[j];
+          a[j] = tmp;
+        }
+        return a;
+      }
+
+      /* ── Build Cards ── */
+      function buildCards() {
+        cardTray.innerHTML = '';
+        var order = shuffle(scenarios);
+        order.forEach(function (s) {
+          var card = document.createElement('div');
+          card.className = 'card';
+          card.id = s.id;
+          card.setAttribute('draggable', 'true');
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', '0');
+          card.setAttribute('aria-label', 'Scenario ' + s.number + ': ' + s.text);
+          card.setAttribute('data-zone', s.zone);
+          card.setAttribute('data-explanation', s.explanation);
+          card.setAttribute('data-number', s.number);
+
+          card.innerHTML =
+            '<div class="card-number" aria-hidden="true">' + s.number + '</div>' +
+            '<div class="card-text">' + s.text + '</div>' +
+            '<div class="card-explanation">' + s.explanation + '</div>';
+
+          cardTray.appendChild(card);
+        });
+      }
+
+      /* ── Progress ── */
+      function updateProgress() {
+        progressText.textContent = sorted + ' of 5 sorted';
+        progressFill.style.width = (sorted / 5 * 100) + '%';
+        progressBar.setAttribute('aria-valuenow', sorted);
+
+        if (sorted === 5) {
+          completionPanel.classList.add('visible');
+          completionPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          btnTryAgain.focus();
+        }
+      }
+
+      /* ── Toast ── */
+      function showToast(msg) {
+        if (toastTimer) clearTimeout(toastTimer);
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        toastTimer = setTimeout(function () {
+          toastEl.classList.remove('show');
+        }, 2200);
+      }
+
+      /* ── Lock a card into a zone ── */
+      function lockCard(cardEl, zoneKey) {
+        var zoneDest = document.getElementById('zone-' + zoneKey + '-cards');
+        cardEl.classList.add('locked');
+        cardEl.classList.remove('selected', 'dragging');
+        cardEl.setAttribute('draggable', 'false');
+        cardEl.removeAttribute('tabindex');
+        cardEl.setAttribute('aria-label', 'Scenario ' + cardEl.getAttribute('data-number') + ' (correctly sorted into ' + zoneKey + ')');
+        zoneDest.appendChild(cardEl);
+        sorted++;
+        updateProgress();
+      }
+
+      /* ── Attempt placement ── */
+      function attemptPlace(cardEl, zoneKey) {
+        if (!cardEl || cardEl.classList.contains('locked')) return;
+
+        var correct = cardEl.getAttribute('data-zone');
+        if (zoneKey === correct) {
+          lockCard(cardEl, zoneKey);
+        } else {
+          cardEl.classList.add('shake');
+          showToast('Not quite \u2014 think about what this scenario controls.');
+          setTimeout(function () {
+            cardEl.classList.remove('shake');
+          }, 350);
+        }
+        deselectCard();
+      }
+
+      /* ── Selection (tap-to-place) ── */
+      function selectCard(cardEl) {
+        if (cardEl.classList.contains('locked')) return;
+        deselectCard();
+        selectedCardId = cardEl.id;
+        cardEl.classList.add('selected');
+        cardEl.setAttribute('aria-pressed', 'true');
+      }
+
+      function deselectCard() {
+        if (selectedCardId) {
+          var prev = document.getElementById(selectedCardId);
+          if (prev) {
+            prev.classList.remove('selected');
+            prev.removeAttribute('aria-pressed');
+          }
+          selectedCardId = null;
+        }
+      }
+
+      /* ── HTML5 Drag & Drop ── */
+      document.addEventListener('dragstart', function (e) {
+        var card = e.target.closest('.card');
+        if (!card || card.classList.contains('locked')) { e.preventDefault(); return; }
+        card.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', card.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      document.addEventListener('dragend', function (e) {
+        var card = e.target.closest('.card');
+        if (card) card.classList.remove('dragging');
+      });
+
+      zones.forEach(function (zone) {
+        zone.addEventListener('dragover', function (e) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          zone.classList.add('drag-over');
+        });
+
+        zone.addEventListener('dragleave', function (e) {
+          if (!zone.contains(e.relatedTarget)) {
+            zone.classList.remove('drag-over');
+          }
+        });
+
+        zone.addEventListener('drop', function (e) {
+          e.preventDefault();
+          zone.classList.remove('drag-over');
+          var cardId = e.dataTransfer.getData('text/plain');
+          var card = document.getElementById(cardId);
+          if (card) attemptPlace(card, zone.getAttribute('data-zone'));
+        });
+      });
+
+      /* ── Keyboard ── */
+      document.addEventListener('keydown', function (e) {
+        var card = e.target.closest('.card');
+        if (card && !card.classList.contains('locked')) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (selectedCardId === card.id) {
+              deselectCard();
+            } else {
+              selectCard(card);
+            }
+            return;
+          }
+        }
+
+        var zone = e.target.closest('.zone');
+        if (zone && selectedCardId) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            var selCard = document.getElementById(selectedCardId);
+            attemptPlace(selCard, zone.getAttribute('data-zone'));
+            return;
+          }
+        }
+
+        if (e.key === 'Escape') {
+          deselectCard();
+        }
+      });
+
+      /* ── Click / Tap on Cards ── */
+      cardTray.addEventListener('click', function (e) {
+        var card = e.target.closest('.card');
+        if (!card || card.classList.contains('locked')) return;
+        if (selectedCardId === card.id) {
+          deselectCard();
+        } else {
+          selectCard(card);
+        }
+      });
+
+      /* ── Click / Tap on Zones ── */
+      zones.forEach(function (zone) {
+        zone.addEventListener('click', function () {
+          if (!selectedCardId) return;
+          var card = document.getElementById(selectedCardId);
+          attemptPlace(card, zone.getAttribute('data-zone'));
+        });
+      });
+
+      /* ── Touch Drag ── */
+      var touchClone = null;
+      var touchCardId = null;
+      var touchStartX = 0;
+      var touchStartY = 0;
+      var touchMoved = false;
+
+      document.addEventListener('touchstart', function (e) {
+        var card = e.target.closest('.card');
+        if (!card || card.classList.contains('locked')) return;
+
+        var t = e.touches[0];
+        touchCardId = card.id;
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchMoved = false;
+        touchState = { card: card, startRect: card.getBoundingClientRect() };
+      }, { passive: true });
+
+      document.addEventListener('touchmove', function (e) {
+        if (!touchState) return;
+        var t = e.touches[0];
+        var dx = t.clientX - touchStartX;
+        var dy = t.clientY - touchStartY;
+
+        if (!touchMoved && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+          touchMoved = true;
+          touchState.card.classList.add('dragging');
+
+          touchClone = touchState.card.cloneNode(true);
+          touchClone.style.position = 'fixed';
+          touchClone.style.width = touchState.startRect.width + 'px';
+          touchClone.style.zIndex = '999';
+          touchClone.style.pointerEvents = 'none';
+          touchClone.style.opacity = '0.9';
+          touchClone.style.transform = 'scale(1.05)';
+          touchClone.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+          document.body.appendChild(touchClone);
+        }
+
+        if (touchMoved && touchClone) {
+          e.preventDefault();
+          touchClone.style.left = (t.clientX - touchState.startRect.width / 2) + 'px';
+          touchClone.style.top = (t.clientY - 30) + 'px';
+
+          zones.forEach(function (z) {
+            var r = z.getBoundingClientRect();
+            if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom) {
+              z.classList.add('drag-over');
+            } else {
+              z.classList.remove('drag-over');
+            }
+          });
+        }
+      }, { passive: false });
+
+      document.addEventListener('touchend', function (e) {
+        if (!touchState) return;
+
+        zones.forEach(function (z) { z.classList.remove('drag-over'); });
+
+        if (touchMoved && touchClone) {
+          var endTouch = e.changedTouches[0];
+          var dropped = false;
+
+          zones.forEach(function (z) {
+            var r = z.getBoundingClientRect();
+            if (endTouch.clientX >= r.left && endTouch.clientX <= r.right && endTouch.clientY >= r.top && endTouch.clientY <= r.bottom) {
+              var card = document.getElementById(touchCardId);
+              attemptPlace(card, z.getAttribute('data-zone'));
+              dropped = true;
+            }
+          });
+
+          touchClone.remove();
+          touchClone = null;
+        }
+
+        if (touchState.card) touchState.card.classList.remove('dragging');
+        touchState = null;
+        touchCardId = null;
+      }, { passive: true });
+
+      /* ── Reset ── */
+      function resetActivity() {
+        sorted = 0;
+        selectedCardId = null;
+        completionPanel.classList.remove('visible');
+
+        zones.forEach(function (z) {
+          var container = z.querySelector('.zone-cards');
+          container.innerHTML = '';
+        });
+
+        buildCards();
+        updateProgress();
+      }
+
+      btnReset.addEventListener('click', resetActivity);
+      btnTryAgain.addEventListener('click', resetActivity);
+
+      /* ── Init ── */
+      buildCards();
+      updateProgress();
+
+    })();
+  </script>
+
+</body>
+</html>

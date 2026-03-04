@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Provisioning Decision Tree — Canva Enterprise</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #F7F7F8;
+      color: #1B1B1B;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px 60px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* --- Header --- */
+    .header {
+      text-align: center;
+      margin-bottom: 36px;
+      max-width: 640px;
+      width: 100%;
+    }
+
+    .header-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #7D2AE8;
+      background: rgba(125, 42, 232, 0.08);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1B1B1B;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 15px;
+      color: #6B6B6B;
+      line-height: 1.5;
+    }
+
+    /* --- Progress --- */
+    .progress-container {
+      text-align: center;
+      margin-bottom: 28px;
+      max-width: 640px;
+      width: 100%;
+    }
+
+    .progress-label {
+      font-size: 13px;
+      color: #999;
+      font-weight: 500;
+      margin-bottom: 12px;
+      min-height: 18px;
+      transition: opacity 0.3s ease;
+    }
+
+    .progress-dots {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .progress-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #DDD;
+      transition: background 0.4s ease, transform 0.3s ease;
+    }
+
+    .progress-dot.completed {
+      background: #00C4CC;
+      transform: scale(1);
+    }
+
+    .progress-dot.current {
+      background: #7D2AE8;
+      transform: scale(1.2);
+    }
+
+    /* --- Wizard Container --- */
+    .wizard-container {
+      max-width: 640px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      min-height: 340px;
+    }
+
+    /* --- Slide --- */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      opacity: 0;
+      transform: translateX(80px);
+      transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+    .slide.active {
+      position: relative;
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+      visibility: visible;
+    }
+
+    .slide.exit-left {
+      transform: translateX(-80px);
+      opacity: 0;
+    }
+
+    .slide.enter-right {
+      transform: translateX(80px);
+      opacity: 0;
+    }
+
+    .slide.exit-right {
+      transform: translateX(80px);
+      opacity: 0;
+    }
+
+    .slide.enter-left {
+      transform: translateX(-80px);
+      opacity: 0;
+    }
+
+    /* --- Question --- */
+    .question-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1B1B1B;
+      line-height: 1.35;
+      margin-bottom: 24px;
+    }
+
+    /* --- Option Cards --- */
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      list-style: none;
+    }
+
+    .option-card {
+      background: #FFFFFF;
+      border: 2px solid #E8E8E8;
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      outline: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .option-card:hover {
+      border-color: #00C4CC;
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .option-card:focus-visible {
+      border-color: #00C4CC;
+      box-shadow: 0 0 0 3px rgba(0, 196, 204, 0.3);
+    }
+
+    .option-card.selected {
+      border-color: #7D2AE8;
+      background: #7D2AE8;
+      color: #FFFFFF;
+      transform: scale(1.0);
+      box-shadow: 0 4px 16px rgba(125, 42, 232, 0.25);
+    }
+
+    .option-card.selected .option-label {
+      color: #FFFFFF;
+    }
+
+    .option-card.selected .option-hint {
+      color: rgba(255,255,255,0.8);
+    }
+
+    @keyframes selectPulse {
+      0% { transform: scale(1.0); }
+      50% { transform: scale(1.03); }
+      100% { transform: scale(1.0); }
+    }
+
+    .option-card.pulse {
+      animation: selectPulse 0.3s ease;
+    }
+
+    .option-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1B1B1B;
+      transition: color 0.2s ease;
+    }
+
+    .option-hint {
+      font-size: 13px;
+      color: #888;
+      margin-top: 4px;
+      line-height: 1.4;
+      transition: color 0.2s ease;
+    }
+
+    /* --- Back Button --- */
+    .back-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #7D2AE8;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px 0;
+      margin-top: 24px;
+      transition: opacity 0.2s ease;
+      outline: none;
+    }
+
+    .back-button:hover {
+      opacity: 0.7;
+    }
+
+    .back-button:focus-visible {
+      outline: 2px solid #7D2AE8;
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+
+    .back-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* --- Recommendation Panel --- */
+    .recommendation-panel {
+      max-width: 640px;
+      width: 100%;
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+      pointer-events: none;
+      visibility: hidden;
+      position: absolute;
+      border-left: 5px solid #00C4CC;
+    }
+
+    .recommendation-panel.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      visibility: visible;
+      position: relative;
+    }
+
+    .recommendation-panel.method-scim {
+      border-left-color: #00C4CC;
+    }
+
+    .recommendation-panel.method-jit {
+      border-left-color: #7D2AE8;
+    }
+
+    .recommendation-panel.method-manual {
+      border-left-color: #FF7262;
+    }
+
+    .rec-method-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+
+    .method-scim .rec-method-badge {
+      background: rgba(0, 196, 204, 0.1);
+      color: #00A3A9;
+    }
+
+    .method-jit .rec-method-badge {
+      background: rgba(125, 42, 232, 0.08);
+      color: #7D2AE8;
+    }
+
+    .method-manual .rec-method-badge {
+      background: rgba(255, 114, 98, 0.1);
+      color: #E05A4A;
+    }
+
+    .rec-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1B1B1B;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .rec-description {
+      font-size: 15px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .rec-section {
+      margin-bottom: 20px;
+    }
+
+    .rec-section:last-of-type {
+      margin-bottom: 0;
+    }
+
+    .rec-section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    .rec-section-text {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.6;
+    }
+
+    .rec-divider {
+      border: none;
+      border-top: 1px solid #EFEFEF;
+      margin: 24px 0;
+    }
+
+    /* --- Decision Path Summary --- */
+    .decision-path {
+      background: #F7F7F8;
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-top: 24px;
+    }
+
+    .decision-path-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+
+    .decision-path-steps {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .path-step {
+      font-weight: 600;
+      color: #1B1B1B;
+    }
+
+    .path-arrow {
+      color: #CCC;
+      font-size: 12px;
+    }
+
+    .path-result {
+      font-weight: 700;
+      color: #7D2AE8;
+    }
+
+    /* --- Start Over Button --- */
+    .start-over-container {
+      max-width: 640px;
+      width: 100%;
+      text-align: center;
+      margin-top: 28px;
+      opacity: 0;
+      transition: opacity 0.5s ease 0.3s;
+      pointer-events: none;
+    }
+
+    .start-over-container.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .start-over-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #7D2AE8;
+      background: rgba(125, 42, 232, 0.06);
+      border: 1.5px solid rgba(125, 42, 232, 0.15);
+      border-radius: 10px;
+      padding: 12px 24px;
+      cursor: pointer;
+      transition: background 0.2s ease, border-color 0.2s ease;
+      outline: none;
+    }
+
+    .start-over-btn:hover {
+      background: rgba(125, 42, 232, 0.12);
+      border-color: rgba(125, 42, 232, 0.3);
+    }
+
+    .start-over-btn:focus-visible {
+      box-shadow: 0 0 0 3px rgba(125, 42, 232, 0.25);
+    }
+
+    .start-over-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 480px) {
+      body {
+        padding: 24px 16px 48px;
+      }
+
+      .header h1 {
+        font-size: 22px;
+      }
+
+      .question-text {
+        font-size: 19px;
+      }
+
+      .option-card {
+        padding: 16px;
+      }
+
+      .recommendation-panel {
+        padding: 24px 20px;
+      }
+
+      .rec-title {
+        font-size: 19px;
+      }
+
+      .decision-path-steps {
+        font-size: 13px;
+      }
+    }
+
+    /* --- Accessibility: prefers-reduced-motion --- */
+    @media (prefers-reduced-motion: reduce) {
+      .slide,
+      .recommendation-panel,
+      .start-over-container,
+      .option-card,
+      .progress-dot {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header" role="banner">
+    <div class="header-badge">Activity</div>
+    <h1>Provisioning Decision Tree</h1>
+    <p>Answer three questions to find the right provisioning method for your Canva Enterprise rollout.</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-container" aria-hidden="true">
+    <div class="progress-label" id="progress-label">Step 1 of 3 — Scale</div>
+    <div class="progress-dots">
+      <div class="progress-dot current" id="dot-0"></div>
+      <div class="progress-dot" id="dot-1"></div>
+      <div class="progress-dot" id="dot-2"></div>
+    </div>
+  </div>
+
+  <!-- Wizard -->
+  <div class="wizard-container" role="main" aria-live="polite" aria-atomic="true" id="wizard-container">
+
+    <!-- Question 1: Scale -->
+    <div class="slide active" id="slide-0" role="group" aria-label="Step 1 of 3: Scale">
+      <h2 class="question-text">How many users will need Canva accounts?</h2>
+      <ul class="options-list" role="listbox" aria-label="User count options">
+        <li class="option-card" role="option" tabindex="0" data-value="under50" aria-selected="false">
+          <div class="option-label">Under 50</div>
+          <div class="option-hint">A small team or pilot group</div>
+        </li>
+        <li class="option-card" role="option" tabindex="0" data-value="50to500" aria-selected="false">
+          <div class="option-label">50 &ndash; 500</div>
+          <div class="option-hint">A department or mid-size organization</div>
+        </li>
+        <li class="option-card" role="option" tabindex="0" data-value="500plus" aria-selected="false">
+          <div class="option-label">500+</div>
+          <div class="option-hint">A large org-wide or multi-department rollout</div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Question 2: Auto-deactivation -->
+    <div class="slide" id="slide-1" role="group" aria-label="Step 2 of 3: Lifecycle">
+      <h2 class="question-text">Do you need accounts to be deactivated automatically when people leave?</h2>
+      <ul class="options-list" role="listbox" aria-label="Automatic deactivation options">
+        <li class="option-card" role="option" tabindex="0" data-value="yes" aria-selected="false">
+          <div class="option-label">Yes</div>
+          <div class="option-hint">Accounts should be removed or suspended automatically</div>
+        </li>
+        <li class="option-card" role="option" tabindex="0" data-value="no" aria-selected="false">
+          <div class="option-label">No</div>
+          <div class="option-hint">We can handle deactivation manually when needed</div>
+        </li>
+      </ul>
+      <button class="back-button" id="back-1" aria-label="Go back to previous question">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 12 6 8 10 4"></polyline></svg>
+        Back
+      </button>
+    </div>
+
+    <!-- Question 3: SCIM support -->
+    <div class="slide" id="slide-2" role="group" aria-label="Step 3 of 3: Identity provider">
+      <h2 class="question-text">Does your identity provider (IdP) support SCIM?</h2>
+      <ul class="options-list" role="listbox" aria-label="SCIM support options">
+        <li class="option-card" role="option" tabindex="0" data-value="yes" aria-selected="false">
+          <div class="option-label">Yes</div>
+          <div class="option-hint">Our IdP (Okta, Azure AD, etc.) supports the SCIM protocol</div>
+        </li>
+        <li class="option-card" role="option" tabindex="0" data-value="no" aria-selected="false">
+          <div class="option-label">No</div>
+          <div class="option-hint">Our IdP does not support SCIM</div>
+        </li>
+        <li class="option-card" role="option" tabindex="0" data-value="notsure" aria-selected="false">
+          <div class="option-label">Not sure</div>
+          <div class="option-hint">I'd need to check with IT</div>
+        </li>
+      </ul>
+      <button class="back-button" id="back-2" aria-label="Go back to previous question">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 12 6 8 10 4"></polyline></svg>
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- Recommendation Panel -->
+  <div class="recommendation-panel" id="recommendation-panel" role="region" aria-label="Provisioning recommendation" aria-live="polite">
+    <div class="rec-method-badge" id="rec-badge"></div>
+    <h2 class="rec-title" id="rec-title"></h2>
+    <p class="rec-description" id="rec-description"></p>
+
+    <hr class="rec-divider">
+
+    <div class="rec-section">
+      <div class="rec-section-label">Why this fits your situation</div>
+      <p class="rec-section-text" id="rec-why"></p>
+    </div>
+
+    <div class="rec-section">
+      <div class="rec-section-label">What to know</div>
+      <p class="rec-section-text" id="rec-know"></p>
+    </div>
+
+    <div class="rec-section">
+      <div class="rec-section-label">Next step</div>
+      <p class="rec-section-text" id="rec-next"></p>
+    </div>
+
+    <div class="decision-path" id="decision-path">
+      <div class="decision-path-label">Your answers</div>
+      <div class="decision-path-steps" id="decision-path-steps"></div>
+    </div>
+  </div>
+
+  <!-- Start Over -->
+  <div class="start-over-container" id="start-over-container">
+    <button class="start-over-btn" id="start-over-btn" aria-label="Start the decision tree over">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 8 5 8"></polyline><path d="M3.51 11a6 6 0 1 0 .74-7.26L1 8"></path></svg>
+      Start Over
+    </button>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // --- State ---
+      var currentStep = 0;
+      var answers = [null, null, null];
+      var isTransitioning = false;
+
+      var stepLabels = ['Scale', 'Lifecycle', 'Identity provider'];
+
+      // --- DOM refs ---
+      var slides = [
+        document.getElementById('slide-0'),
+        document.getElementById('slide-1'),
+        document.getElementById('slide-2')
+      ];
+      var dots = [
+        document.getElementById('dot-0'),
+        document.getElementById('dot-1'),
+        document.getElementById('dot-2')
+      ];
+      var progressLabel = document.getElementById('progress-label');
+      var progressContainer = document.querySelector('.progress-container');
+      var wizardContainer = document.getElementById('wizard-container');
+      var recPanel = document.getElementById('recommendation-panel');
+      var startOverContainer = document.getElementById('start-over-container');
+      var startOverBtn = document.getElementById('start-over-btn');
+
+      // --- Helpers ---
+      function userLabel(val) {
+        var map = {
+          'under50': 'Under 50 users',
+          '50to500': '50\u2013500 users',
+          '500plus': '500+ users',
+          'yes': 'Yes',
+          'no': 'No',
+          'notsure': 'Not sure'
+        };
+        return map[val] || val;
+      }
+
+      function questionShortLabel(step, val) {
+        if (step === 0) return userLabel(val);
+        if (step === 1) return val === 'yes' ? 'Yes, automatic deactivation' : 'No automatic deactivation';
+        if (step === 2) {
+          if (val === 'yes') return 'Yes, IdP supports SCIM';
+          if (val === 'no') return 'No SCIM support';
+          return 'Not sure about SCIM';
+        }
+        return val;
+      }
+
+      // --- Progress ---
+      function updateProgress() {
+        for (var i = 0; i < 3; i++) {
+          dots[i].className = 'progress-dot';
+          if (i < currentStep) dots[i].classList.add('completed');
+          if (i === currentStep) dots[i].classList.add('current');
+        }
+        progressLabel.textContent = 'Step ' + (currentStep + 1) + ' of 3 \u2014 ' + stepLabels[currentStep];
+      }
+
+      // --- Slide Transitions ---
+      function goToSlide(targetIndex, direction) {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        var currentSlide = slides[currentStep];
+        var targetSlide = slides[targetIndex];
+
+        // Exit current slide
+        currentSlide.classList.remove('active');
+        currentSlide.classList.add(direction === 'forward' ? 'exit-left' : 'exit-right');
+
+        // Prep target slide
+        targetSlide.classList.remove('exit-left', 'exit-right', 'enter-left', 'enter-right');
+        targetSlide.classList.add(direction === 'forward' ? 'enter-right' : 'enter-left');
+        targetSlide.style.visibility = 'visible';
+        targetSlide.style.position = 'absolute';
+
+        // Force reflow
+        void targetSlide.offsetWidth;
+
+        // Animate in
+        targetSlide.classList.remove('enter-right', 'enter-left');
+        targetSlide.classList.add('active');
+        targetSlide.style.position = '';
+
+        currentStep = targetIndex;
+        updateProgress();
+
+        // Restore previous selection visual if any
+        restoreSelection(targetIndex);
+
+        setTimeout(function () {
+          currentSlide.classList.remove('exit-left', 'exit-right');
+          currentSlide.style.visibility = '';
+          isTransitioning = false;
+
+          // Focus first option in new slide for keyboard users
+          var firstOption = targetSlide.querySelector('.option-card');
+          if (firstOption) firstOption.focus();
+        }, 420);
+      }
+
+      function restoreSelection(stepIndex) {
+        var slide = slides[stepIndex];
+        var cards = slide.querySelectorAll('.option-card');
+        cards.forEach(function (card) {
+          if (answers[stepIndex] && card.getAttribute('data-value') === answers[stepIndex]) {
+            card.classList.add('selected');
+            card.setAttribute('aria-selected', 'true');
+          } else {
+            card.classList.remove('selected');
+            card.setAttribute('aria-selected', 'false');
+          }
+        });
+      }
+
+      // --- Select Option ---
+      function selectOption(stepIndex, value, cardEl) {
+        if (isTransitioning) return;
+
+        // Deselect siblings
+        var slide = slides[stepIndex];
+        slide.querySelectorAll('.option-card').forEach(function (c) {
+          c.classList.remove('selected', 'pulse');
+          c.setAttribute('aria-selected', 'false');
+        });
+
+        // Select this card
+        cardEl.classList.add('selected', 'pulse');
+        cardEl.setAttribute('aria-selected', 'true');
+        answers[stepIndex] = value;
+
+        // Auto-advance after delay
+        setTimeout(function () {
+          if (stepIndex < 2) {
+            goToSlide(stepIndex + 1, 'forward');
+          } else {
+            showRecommendation();
+          }
+        }, 400);
+      }
+
+      // --- Decision Logic ---
+      function getRecommendation(users, deactivation, scim) {
+        // 500+
+        if (users === '500plus') {
+          if (scim === 'yes') return 'scim';
+          if (scim === 'no') return 'jit-recommend-scim';
+          return 'jit-check-scim';
+        }
+        // 50-500
+        if (users === '50to500') {
+          if (deactivation === 'no') return 'jit';
+          // deactivation yes
+          if (scim === 'yes') return 'scim';
+          if (scim === 'no') return 'jit-manual-deactivation';
+          return 'jit-explore-scim';
+        }
+        // under 50
+        if (deactivation === 'no') return 'manual';
+        // deactivation yes
+        if (scim === 'yes') return 'scim';
+        return 'jit-manual-deactivation';
+      }
+
+      function getRecommendationData(key, users, deactivation, scim) {
+        var data = {};
+
+        switch (key) {
+          case 'scim':
+            data.method = 'scim';
+            data.badge = 'Recommended: SCIM';
+            data.title = 'SCIM \u2014 Automated Provisioning';
+            data.description = 'SCIM connects your identity provider directly to Canva. Accounts are created, updated, and deactivated automatically \u2014 no manual work.';
+            data.know = 'SCIM requires your IdP to support the SCIM protocol and an admin to configure the integration. Setup takes more effort upfront but saves significant time ongoing.';
+            data.next = 'In the Admin course (L3: Configure Security & Access), you\u2019ll set up SCIM step by step.';
+            // Contextual "why"
+            if (users === '500plus') {
+              data.why = 'With 500+ users' + (deactivation === 'yes' ? ' and automatic deactivation needs' : '') + ', SCIM eliminates the risk of orphaned accounts and removes the manual overhead of managing a large user base.';
+            } else if (users === '50to500') {
+              data.why = 'Since you need automatic deactivation and your IdP supports SCIM, automated provisioning keeps your 50\u2013500 user base clean and up to date without manual work.';
+            } else {
+              data.why = 'Even with a smaller team, automatic deactivation through SCIM means you won\u2019t need to remember to remove accounts when people leave.';
+            }
+            break;
+
+          case 'jit':
+            data.method = 'jit';
+            data.badge = 'Recommended: JIT';
+            data.title = 'JIT Provisioning \u2014 Just in Time';
+            data.description = 'JIT creates a Canva account automatically the first time someone signs in through SSO. Simpler than SCIM but with less control.';
+            data.why = 'For a mid-size rollout without the need for automatic deactivation, JIT gets people into Canva without manual account creation \u2014 just share the sign-in link.';
+            data.know = 'JIT works with SSO alone \u2014 no additional provisioning integration needed. However, team assignment is manual or default, and deactivation must be handled separately.';
+            data.next = 'In the Admin course (L3: Configure Security & Access), you\u2019ll configure SSO and JIT provisioning.';
+            break;
+
+          case 'jit-manual-deactivation':
+            data.method = 'jit';
+            data.badge = 'Recommended: JIT + Manual Deactivation';
+            data.title = 'JIT Provisioning \u2014 Just in Time';
+            data.description = 'JIT creates a Canva account automatically the first time someone signs in through SSO. Simpler than SCIM but with less control.';
+            if (users === 'under50') {
+              data.why = 'Your IdP doesn\u2019t support SCIM, so JIT is the best automated option for creating accounts. Since you need deactivation, you\u2019ll handle that manually \u2014 manageable with a smaller team.';
+            } else {
+              data.why = 'Since your IdP doesn\u2019t support SCIM, JIT is the best option for automating account creation. You\u2019ll need to deactivate accounts manually when people leave \u2014 consider building a regular review process.';
+            }
+            data.know = 'JIT works with SSO alone \u2014 no additional provisioning integration needed. However, team assignment is manual or default, and deactivation must be handled separately.';
+            data.next = 'In the Admin course (L3: Configure Security & Access), you\u2019ll configure SSO and JIT provisioning.';
+            break;
+
+          case 'jit-explore-scim':
+            data.method = 'jit';
+            data.badge = 'Recommended: JIT (explore SCIM later)';
+            data.title = 'JIT Provisioning \u2014 Just in Time';
+            data.description = 'JIT creates a Canva account automatically the first time someone signs in through SSO. Simpler than SCIM but with less control.';
+            data.why = 'Start with JIT to get your 50\u2013500 users in quickly. Since you need automatic deactivation but aren\u2019t sure about SCIM support, explore SCIM with your IT team as a future upgrade.';
+            data.know = 'JIT works with SSO alone \u2014 no additional provisioning integration needed. However, team assignment is manual or default, and deactivation must be handled separately.';
+            data.next = 'In the Admin course (L3: Configure Security & Access), you\u2019ll configure SSO and JIT provisioning.';
+            break;
+
+          case 'jit-recommend-scim':
+            data.method = 'jit';
+            data.badge = 'Recommended: JIT (strongly consider SCIM)';
+            data.title = 'JIT Provisioning \u2014 Just in Time';
+            data.description = 'JIT creates a Canva account automatically the first time someone signs in through SSO. Simpler than SCIM but with less control.';
+            data.why = 'With 500+ users, JIT handles account creation \u2014 but at this scale, we strongly recommend exploring SCIM. The overhead of manual deactivation and team management grows significantly with large user counts.';
+            data.know = 'JIT works with SSO alone \u2014 no additional provisioning integration needed. However, team assignment is manual or default, and deactivation must be handled separately. At your scale, talk to your IdP vendor about SCIM options.';
+            data.next = 'In the Admin course (L3: Configure Security & Access), you\u2019ll configure SSO and JIT provisioning.';
+            break;
+
+          case 'jit-check-scim':
+            data.method = 'jit';
+            data.badge = 'Recommended: JIT (check SCIM with IT)';
+            data.title = 'JIT Provisioning \u2014 Just in Time';
+            data.description = 'JIT creates a Canva account automatically the first time someone signs in through SSO. Simpler than SCIM but with less control.';
+            data.why = 'Start with JIT to get your 500+ users provisioned. But at this scale, it\u2019s worth checking with your IT team about SCIM support \u2014 automated lifecycle management becomes critical with large user bases.';
+            data.know = 'JIT works with SSO alone \u2014 no additional provisioning integration needed. However, team assignment is manual or default, and deactivation must be handled separately. Ask your IT team: \u201CDoes our IdP support SCIM?\u201D';
+            data.next = 'In the Admin course (L3: Configure Security & Access), you\u2019ll configure SSO and JIT provisioning.';
+            break;
+
+          case 'manual':
+            data.method = 'manual';
+            data.badge = 'Recommended: Manual';
+            data.title = 'Manual Provisioning \u2014 Invite by Email';
+            data.description = 'For smaller teams, you can invite people directly by email. Each person gets an invitation link to join your Canva organization.';
+            data.why = 'With fewer than 50 users and no need for automatic deactivation, manual invitations are the simplest approach. No integration setup required.';
+            data.know = 'You\u2019ll send invitations from the admin panel. Each person accepts and creates their account. You manage team assignments directly.';
+            data.next = 'In the Admin course (L6: Launch & Onboard Members), you\u2019ll send invitations.';
+            break;
+        }
+
+        data.resultLabel = data.title.split(' \u2014 ')[0];
+        return data;
+      }
+
+      // --- Show Recommendation ---
+      function showRecommendation() {
+        if (isTransitioning) return;
+        isTransitioning = true;
+
+        var currentSlide = slides[currentStep];
+        currentSlide.classList.remove('active');
+        currentSlide.classList.add('exit-left');
+
+        // Hide progress
+        progressContainer.style.opacity = '0';
+        progressContainer.style.transition = 'opacity 0.3s ease';
+
+        // Hide wizard container
+        setTimeout(function () {
+          wizardContainer.style.display = 'none';
+          progressContainer.style.display = 'none';
+
+          var key = getRecommendation(answers[0], answers[1], answers[2]);
+          var rec = getRecommendationData(key, answers[0], answers[1], answers[2]);
+
+          // Set content
+          document.getElementById('rec-badge').textContent = rec.badge;
+          document.getElementById('rec-title').textContent = rec.title;
+          document.getElementById('rec-description').textContent = rec.description;
+          document.getElementById('rec-why').textContent = rec.why;
+          document.getElementById('rec-know').textContent = rec.know;
+          document.getElementById('rec-next').textContent = rec.next;
+
+          // Method class
+          recPanel.className = 'recommendation-panel method-' + rec.method;
+
+          // Build decision path
+          var pathHTML = '';
+          pathHTML += '<span class="path-step">' + questionShortLabel(0, answers[0]) + '</span>';
+          pathHTML += '<span class="path-arrow">\u2192</span>';
+          pathHTML += '<span class="path-step">' + questionShortLabel(1, answers[1]) + '</span>';
+          pathHTML += '<span class="path-arrow">\u2192</span>';
+          pathHTML += '<span class="path-step">' + questionShortLabel(2, answers[2]) + '</span>';
+          pathHTML += '<span class="path-arrow">\u2192</span>';
+          pathHTML += '<span class="path-result">' + rec.resultLabel + '</span>';
+          document.getElementById('decision-path-steps').innerHTML = pathHTML;
+
+          // Force reflow then show
+          void recPanel.offsetWidth;
+          recPanel.classList.add('visible');
+          startOverContainer.classList.add('visible');
+
+          isTransitioning = false;
+
+          // Focus recommendation for screen readers
+          recPanel.setAttribute('tabindex', '-1');
+          recPanel.focus();
+        }, 420);
+      }
+
+      // --- Start Over ---
+      function resetWizard() {
+        answers = [null, null, null];
+        currentStep = 0;
+
+        // Hide recommendation
+        recPanel.classList.remove('visible');
+        startOverContainer.classList.remove('visible');
+
+        // Clear selections
+        document.querySelectorAll('.option-card').forEach(function (c) {
+          c.classList.remove('selected', 'pulse');
+          c.setAttribute('aria-selected', 'false');
+        });
+
+        // Reset slides
+        slides.forEach(function (s, i) {
+          s.classList.remove('active', 'exit-left', 'exit-right', 'enter-left', 'enter-right');
+          s.style.visibility = '';
+          s.style.position = '';
+        });
+
+        setTimeout(function () {
+          // Show wizard again
+          wizardContainer.style.display = '';
+          progressContainer.style.display = '';
+
+          void progressContainer.offsetWidth;
+          progressContainer.style.opacity = '1';
+
+          slides[0].classList.add('active');
+          updateProgress();
+
+          // Focus first option
+          var firstOption = slides[0].querySelector('.option-card');
+          if (firstOption) firstOption.focus();
+        }, 300);
+      }
+
+      // --- Event Binding ---
+
+      // Option card clicks
+      slides.forEach(function (slide, stepIndex) {
+        var cards = slide.querySelectorAll('.option-card');
+        cards.forEach(function (card) {
+          card.addEventListener('click', function () {
+            selectOption(stepIndex, card.getAttribute('data-value'), card);
+          });
+          card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              selectOption(stepIndex, card.getAttribute('data-value'), card);
+            }
+          });
+        });
+      });
+
+      // Back buttons
+      document.getElementById('back-1').addEventListener('click', function () {
+        goToSlide(0, 'back');
+      });
+      document.getElementById('back-2').addEventListener('click', function () {
+        goToSlide(1, 'back');
+      });
+
+      // Start over
+      startOverBtn.addEventListener('click', resetWizard);
+
+      // Initialize
+      updateProgress();
+    })();
+  </script>
+</body>
+</html>
